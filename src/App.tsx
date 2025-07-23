@@ -43,7 +43,7 @@ const generateInitialEmails = (): Email[] => [
     id: 1,
     from: 'Gmail Team',
     to: 'me@matrices.ai',
-    subject: 'Welcome to your new Gmail account',
+    subject: 'Welcome to your new Gmail',
     body: 'Welcome! Your new Gmail account is ready to use. You can now send and receive emails, organize your inbox, and much more.',
     timestamp: new Date('2030-03-14T10:30:00'),
     isRead: false,
