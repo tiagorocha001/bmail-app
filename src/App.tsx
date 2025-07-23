@@ -124,6 +124,7 @@ const App = () => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [isComposing, setIsComposing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [composeData, setComposeData] = useState<ComposeData>({
     to: '',
     subject: '',
@@ -187,6 +188,7 @@ const App = () => {
 
   const handleEmailClick = (email: Email): void => {
     setSelectedEmail(email);
+    setIsSidebarOpen(false); // Close sidebar on mobile when email is selected
     if (!email.isRead && email.folder !== 'sent' && email.folder !== 'drafts') {
       setEmails(prev => prev.map(e => 
         e.id === email.id ? { ...e, isRead: true } : e
@@ -203,6 +205,7 @@ const App = () => {
   const handleCompose = (): void => {
     setIsComposing(true);
     setSelectedEmail(null);
+    setIsSidebarOpen(false); // Close sidebar on mobile when composing
     setComposeData({ to: '', subject: '', body: '' });
   };
 
@@ -255,6 +258,11 @@ const App = () => {
     setSelectedEmail(null);
   };
 
+  const handleFolderClick = (folderId: string): void => {
+    setCurrentView(folderId);
+    setIsSidebarOpen(false); // Close sidebar on mobile when folder is selected
+  };
+
   const folders: Folder[] = [
     { id: 'inbox', name: 'Inbox', icon: Mail, count: emails.filter(e => e.folder === 'inbox').length },
     { id: 'starred', name: 'Starred', icon: Star, count: emails.filter(e => e.isStarred).length },
@@ -266,8 +274,8 @@ const App = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md w-96">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
           <div className="text-center mb-6">
             <Mail className="mx-auto h-12 w-12 text-blue-600 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900">BMail</h1>
@@ -287,51 +295,64 @@ const App = () => {
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center h-16 px-6 border-b border-gray-200 bg-white">
-        <div className="flex items-center space-x-4">
-          <button className="p-2 hover:bg-gray-100 rounded-full">
+      <div className="flex items-center h-14 md:h-16 px-3 md:px-6 border-b border-gray-200 bg-white">
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
             <Menu className="h-5 w-5 text-gray-600" />
           </button>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-sm flex items-center justify-center">
-              <Mail className="h-5 w-5 text-white" />
+            <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 rounded-sm flex items-center justify-center">
+              <Mail className="h-3 w-3 md:h-5 md:w-5 text-white" />
             </div>
-            <span className="text-xl font-normal text-gray-700">BMail</span>
+            <span className="text-lg md:text-xl font-normal text-gray-700">BMail</span>
           </div>
         </div>
         
-        <div className="flex-1 max-w-2xl mx-8">
+        <div className="flex-1 max-w-2xl mx-2 md:mx-8">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search mail"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-100 hover:bg-gray-200 focus:bg-white focus:shadow-md rounded-full transition-all duration-200 outline-none"
+              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2 md:py-3 bg-gray-100 hover:bg-gray-200 focus:bg-white focus:shadow-md rounded-full transition-all duration-200 outline-none text-sm md:text-base"
             />
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <button className="p-2 hover:bg-gray-100 rounded-full">
+          <button className="p-2 hover:bg-gray-100 rounded-full hidden md:block">
             <Settings className="h-5 w-5 text-gray-600" />
           </button>
-          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium ml-4">
+          <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-medium">
             {user.avatar}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-6">
+        <div className={`${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 fixed md:relative z-50 md:z-0 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out h-full`}>
+          <div className="p-4 md:p-6">
             <button
               onClick={handleCompose}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-full transition-colors flex items-center justify-center space-x-2 shadow-md"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 md:py-3 px-4 md:px-6 rounded-full transition-colors flex items-center justify-center space-x-2 shadow-md text-sm md:text-base"
             >
-              <Edit className="h-5 w-5" />
+              <Edit className="h-4 w-4 md:h-5 md:w-5" />
               <span>Compose</span>
             </button>
           </div>
@@ -343,15 +364,15 @@ const App = () => {
               return (
                 <button
                   key={folder.id}
-                  onClick={() => setCurrentView(folder.id)}
-                  className={`w-full flex items-center px-4 py-2 rounded-full text-sm transition-colors ${
+                  onClick={() => handleFolderClick(folder.id)}
+                  className={`w-full flex items-center px-3 md:px-4 py-2.5 md:py-2 rounded-full text-sm transition-colors ${
                     isActive 
                       ? 'bg-blue-100 font-bold' 
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon />
-                  <span className="flex-1 text-left ml-1.5">{folder.name}</span>
+                  <span className="flex-1 text-left ml-2 md:ml-1.5">{folder.name}</span>
                   {folder.count > 0 && folder.id === 'inbox' && (
                     <span className="text-sm font-medium">
                       {folder.count}
@@ -374,10 +395,10 @@ const App = () => {
           {!selectedEmail && !isComposing && (
             <div className="flex-1 overflow-y-auto bg-white">
               {filteredEmails.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 px-4">
                   <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No emails found</h3>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 text-sm md:text-base">
                     {searchQuery ? 'Try adjusting your search terms' : 'Your inbox is empty'}
                   </p>
                 </div>
@@ -387,7 +408,7 @@ const App = () => {
                     <div
                       key={email.id}
                       onClick={() => handleEmailClick(email)}
-                      className={`flex items-center px-6 py-2 hover:shadow-md cursor-pointer transition-all border-b border-gray-100 ${
+                      className={`flex items-center px-3 md:px-6 py-3 md:py-2 hover:shadow-md cursor-pointer transition-all border-b border-gray-100 ${
                         !email.isRead ? 'bg-white shadow-sm' : 'bg-gray-50'
                       }`}
                     >
@@ -396,35 +417,35 @@ const App = () => {
                           e.stopPropagation();
                           handleStarToggle(email.id, email.isStarred);
                         }}
-                        className="mr-4 hover:bg-gray-200 p-1 rounded"
+                        className="mr-3 md:mr-4 hover:bg-gray-200 p-1 rounded flex-shrink-0"
                       >
                         {email.isStarred ? (
-                          <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                          <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 fill-current" />
                         ) : (
-                          <StarOff className="h-5 w-5 text-gray-400" />
+                          <StarOff className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                         )}
                       </button>
                       
-                      <div className="min-w-0 flex-1 flex items-center">
-                        <div className="w-48 flex-shrink-0">
-                          <span className={`text-sm ${!email.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                      <div className="min-w-0 flex-1 flex flex-col md:flex-row md:items-center">
+                        <div className="md:w-48 flex-shrink-0 mb-1 md:mb-0">
+                          <span className={`text-sm ${!email.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'} truncate block`}>
                             {currentView === 'sent' ? email.to : email.from}
                           </span>
                         </div>
                         
-                        <div className="flex-1 min-w-0 mx-4">
-                          <div className="flex items-center">
-                            <span className={`text-sm ${!email.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                        <div className="flex-1 min-w-0 md:mx-4">
+                          <div className="flex flex-col md:flex-row md:items-center">
+                            <span className={`text-sm ${!email.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'} truncate block md:inline`}>
                               {email.subject}
                             </span>
-                            <span className="text-sm text-gray-500 ml-2">
-                              - {email.body.split('\n')[0].substring(0, 100)}
-                              {email.body.split('\n')[0].length > 100 ? '...' : ''}
+                            <span className="text-sm text-gray-500 md:ml-2 truncate block md:inline">
+                              {window.innerWidth < 768 ? '' : '- '}{email.body.split('\n')[0].substring(0, window.innerWidth < 768 ? 60 : 100)}
+                              {email.body.split('\n')[0].length > (window.innerWidth < 768 ? 60 : 100) ? '...' : ''}
                             </span>
                           </div>
                         </div>
                         
-                        <div className="flex-shrink-0 text-right">
+                        <div className="flex-shrink-0 text-right mt-1 md:mt-0">
                           <span className="text-xs text-gray-500">{formatTime(email.timestamp)}</span>
                         </div>
                       </div>
@@ -438,14 +459,14 @@ const App = () => {
           {/* Email Detail View */}
           {selectedEmail && !isComposing && (
             <div className="flex-1 flex flex-col bg-white">
-              <div className="border-b border-gray-200 p-6">
+              <div className="border-b border-gray-200 p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <button
                     onClick={() => setSelectedEmail(null)}
                     className="flex items-center text-gray-600 hover:text-gray-900"
                   >
                     <ChevronLeft className="h-5 w-5 mr-1" />
-                    Back
+                    <span className="hidden md:inline">Back</span>
                   </button>
                   <div className="flex items-center space-x-2">
                     <button
@@ -453,37 +474,42 @@ const App = () => {
                       className="p-2 hover:bg-gray-100 rounded-lg"
                     >
                       {selectedEmail.isStarred ? (
-                        <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                        <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 fill-current" />
                       ) : (
-                        <StarOff className="h-5 w-5 text-gray-400" />
+                        <StarOff className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                       )}
                     </button>
                     <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <Reply className="h-5 w-5 text-gray-600" />
+                      <Reply className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                     </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <Forward className="h-5 w-5 text-gray-600" />
+                    <button className="p-2 hover:bg-gray-100 rounded-lg hidden md:block">
+                      <Forward className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => handleDeleteEmail(selectedEmail.id)}
                       className="p-2 hover:bg-gray-100 rounded-lg"
                     >
-                      <Trash2 className="h-5 w-5 text-gray-600" />
+                      <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                     </button>
                   </div>
                 </div>
-                <h1 className="text-xl font-normal text-gray-900 mb-4">{selectedEmail.subject}</h1>
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="font-medium">{selectedEmail.from}</span>
-                  <span className="mx-2">to</span>
-                  <span>{selectedEmail.to}</span>
-                  <span className="ml-auto">{formatTime(selectedEmail.timestamp)}</span>
+                <h1 className="text-lg md:text-xl font-normal text-gray-900 mb-4 break-words">{selectedEmail.subject}</h1>
+                <div className="flex flex-col md:flex-row md:items-center text-sm text-gray-600 space-y-1 md:space-y-0">
+                  <div className="flex items-center">
+                    <span className="font-medium truncate">{selectedEmail.from}</span>
+                    <span className="mx-2 hidden md:inline">to</span>
+                  </div>
+                  <div className="flex items-center md:flex-1">
+                    <span className="md:hidden text-gray-500 mr-2">to</span>
+                    <span className="truncate">{selectedEmail.to}</span>
+                    <span className="ml-auto text-xs">{formatTime(selectedEmail.timestamp)}</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto">
                 <div className="prose max-w-none">
                   {selectedEmail.body.split('\n').map((line: string, index: number) => (
-                    <p key={index} className="mb-3 text-gray-700 leading-relaxed">{line}</p>
+                    <p key={index} className="mb-3 text-gray-700 leading-relaxed text-sm md:text-base break-words">{line}</p>
                   ))}
                 </div>
               </div>
@@ -493,19 +519,20 @@ const App = () => {
           {/* Compose View */}
           {isComposing && (
             <div className="flex-1 flex flex-col bg-white">
-              <div className="border-b border-gray-200 p-6">
+              <div className="border-b border-gray-200 p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-xl font-normal text-gray-900">New Message</h1>
+                  <h1 className="text-lg md:text-xl font-normal text-gray-900">New Message</h1>
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handleSaveDraft}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      className="px-3 md:px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
                     >
-                      Save Draft
+                      <span className="hidden md:inline">Save Draft</span>
+                      <span className="md:hidden">Save</span>
                     </button>
                     <button
                       onClick={handleSendEmail}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="px-4 md:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                     >
                       Send
                     </button>
@@ -513,30 +540,30 @@ const App = () => {
                       onClick={() => setIsComposing(false)}
                       className="p-2 hover:bg-gray-100 rounded-lg"
                     >
-                      <X className="h-5 w-5 text-gray-600" />
+                      <X className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="flex-1 flex flex-col p-6">
+              <div className="flex-1 flex flex-col p-4 md:p-6">
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center border-b border-gray-200 pb-2">
-                    <label className="w-12 text-sm text-gray-600">To</label>
+                    <label className="w-12 text-sm text-gray-600 flex-shrink-0">To</label>
                     <input
                       type="email"
                       value={composeData.to}
                       onChange={(e) => setComposeData({ ...composeData, to: e.target.value })}
-                      className="flex-1 outline-none text-sm"
+                      className="flex-1 outline-none text-sm min-w-0"
                       placeholder="Recipients"
                     />
                   </div>
                   <div className="flex items-center border-b border-gray-200 pb-2">
-                    <label className="w-12 text-sm text-gray-600">Subject</label>
+                    <label className="w-12 text-sm text-gray-600 flex-shrink-0">Subject</label>
                     <input
                       type="text"
                       value={composeData.subject}
                       onChange={(e) => setComposeData({ ...composeData, subject: e.target.value })}
-                      className="flex-1 outline-none text-sm"
+                      className="flex-1 outline-none text-sm min-w-0"
                       placeholder="Subject"
                     />
                   </div>
