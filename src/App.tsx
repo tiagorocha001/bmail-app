@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Mail, Send, Trash2, Edit, Star, StarOff, Reply, Forward, Settings, User, Menu, X, ChevronLeft } from 'lucide-react';
+import { Search, Mail, Send, Trash2, Edit, Star, StarOff, Reply, Forward, Settings, User, Menu, X, ChevronLeft, Shield } from 'lucide-react';
 
 // Type definitions
 interface User {
@@ -155,6 +155,8 @@ const App = () => {
       emailsToShow = drafts;
     } else if (currentView === 'starred') {
       emailsToShow = emails.filter(email => email.isStarred);
+    } else if (currentView === 'spam') {
+      emailsToShow = emails.filter(email => email.folder === 'spam');
     } else if (currentView === 'trash') {
       emailsToShow = emails.filter(email => email.folder === 'trash');
     }
@@ -258,6 +260,13 @@ const App = () => {
     setSelectedEmail(null);
   };
 
+  const handleMarkAsSpam = (emailId: number): void => {
+    setEmails(prev => prev.map(email => 
+      email.id === emailId ? { ...email, folder: 'spam' } : email
+    ));
+    setSelectedEmail(null);
+  };
+
   const handleFolderClick = (folderId: string): void => {
     setCurrentView(folderId);
     setIsSidebarOpen(false); // Close sidebar on mobile when folder is selected
@@ -268,7 +277,7 @@ const App = () => {
     { id: 'starred', name: 'Starred', icon: Star, count: emails.filter(e => e.isStarred).length },
     { id: 'sent', name: 'Sent', icon: Send, count: emails.filter(e => e.folder === 'sent').length },
     { id: 'drafts', name: 'All Mail', icon: Edit, count: drafts.length },
-    { id: 'spam', name: 'Spam', icon: Trash2, count: 1 },
+    { id: 'spam', name: 'Spam', icon: Shield, count: emails.filter(e => e.folder === 'spam').length },
     { id: 'trash', name: 'Trash', icon: Trash2, count: emails.filter(e => e.folder === 'trash').length }
   ];
 
@@ -373,14 +382,9 @@ const App = () => {
                 >
                   <Icon />
                   <span className="flex-1 text-left ml-2 md:ml-1.5">{folder.name}</span>
-                  {folder.count > 0 && folder.id === 'inbox' && (
+                  {folder.count > 0 && (folder.id === 'inbox' || folder.id === 'spam') && (
                     <span className="text-sm font-medium">
                       {folder.count}
-                    </span>
-                  )}
-                  {folder.id === 'spam' && (
-                    <span className="text-sm font-medium">
-                      1
                     </span>
                   )}
                 </button>
@@ -466,7 +470,8 @@ const App = () => {
                     className="flex items-center text-gray-600 hover:text-gray-900"
                   >
                     <ChevronLeft className="h-5 w-5 mr-1" />
-                    <span className="hidden md:inline">Back</span>
+                    <span className="hidden md:inline">Back to {folders.find(f => f.id === currentView)?.name || 'Inbox'}</span>
+                    <span className="md:hidden">Back</span>
                   </button>
                   <div className="flex items-center space-x-2">
                     <button
@@ -485,11 +490,21 @@ const App = () => {
                     <button className="p-2 hover:bg-gray-100 rounded-lg hidden md:block">
                       <Forward className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                     </button>
+                    {selectedEmail.folder !== 'spam' && selectedEmail.folder !== 'trash' && (
+                      <button
+                        onClick={() => handleMarkAsSpam(selectedEmail.id)}
+                        className="p-2 hover:bg-gray-100 rounded-lg"
+                        title="Mark as spam"
+                      >
+                        <Shield className="h-4 w-4 md:h-5 md:w-5 text-orange-600" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteEmail(selectedEmail.id)}
                       className="p-2 hover:bg-gray-100 rounded-lg"
+                      title="Delete"
                     >
-                      <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
+                      <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-red-600" />
                     </button>
                   </div>
                 </div>
